@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const p = path.join(
+const file_path = path.join(
     path.dirname(process.mainModule.filename),
     'data',
     'cart.json'
@@ -9,7 +9,7 @@ const p = path.join(
 
 module.exports = class Cart {
     static addProduct(id, productPrice){
-        fs.readFile(p, (err, fileContent) => {
+        fs.readFile(file_path, (err, fileContent) => {
             let cart = {products: [], totalPrice: 0};
             if (!err) {
                 cart = JSON.parse(fileContent)
@@ -29,7 +29,7 @@ module.exports = class Cart {
                 cart.products = [...cart.products, updatedProduct];
             }
             cart.totalPrice += +productPrice;
-            fs.writeFile(p, JSON.stringify(cart), err => {
+            fs.writeFile(file_path, JSON.stringify(cart), err => {
                 console.log(err);
             })
         });
