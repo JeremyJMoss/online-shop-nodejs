@@ -15,23 +15,58 @@ module.exports = class Cart {
                 cart = JSON.parse(fileContent)
             }
 
-            const existingProductIndex = cart?.products.findIndex(prod => prod.id === id);
-            const existingProduct = cart.products[existingProductIndex];
-            let updatedProduct;
-            if (existingProduct) {
-                updatedProduct = {...existingProduct};
-                updatedProduct.qty++;
-                cart.products = [...cart.products];
-                cart.products[existingProductIndex] = updatedProduct;
+            const existingProductIndex = cart.products.findIndex(prod => prod.id === id);
+            
+            if (existingProductIndex !== -1) {
+                cart.products[existingProductIndex].qty++;
             }
             else {
-                updatedProduct = {id, qty: 1};
-                cart.products = [...cart.products, updatedProduct];
+                cart.products.push({id, qty: 1});
             }
+
             cart.totalPrice += +productPrice;
+
             fs.writeFile(file_path, JSON.stringify(cart), err => {
-                console.log(err);
+                if (err){
+                    console.log(err);
+                }
             })
         });
+
+    }
+
+    static deleteProduct(id, productPrice){
+        fs.readFile(file_path, (err, fileContent) => {
+            if(err) return;
+
+            const cart = JSON.parse(fileContent);
+            const product = cart.products.find(prod => prod.id == id);
+            
+            if (!product) return;
+            
+            const quantity = product.qty;
+            
+            const updatedCart = { 
+                products: cart.products.filter(prod => prod.id !== id),
+                totalPrice: cart.totalPrice - +productPrice * quantity
+            };
+
+            if (updatedCart.products.length == 0){
+                fs.unlink(file_path, (err) => {
+                    if (err){
+                        console.log(err);
+                    }
+                    console.log("Cart file deleted");
+                })
+            }
+            else{
+                fs.writeFile(file_path, JSON.stringify(updatedCart), err => {
+                    if (err){
+                        console.log(err);
+                    }
+                })
+            }
+
+        })
     }
 }
