@@ -1,13 +1,16 @@
 const Product = require('../models/product');
 
 exports.getAdminProducts = (req, res, next) => {
-    Product.fetchAll(products => {
-        res.render('admin/products', {
-            prods: products,
-            pageTitle: 'Admin - Product List',
-            path: '/admin/products'
+    Product.fetchAll()
+        .then(([rows, _ ]) => {
+            res.render('admin/products', {
+                prods: rows,
+                pageTitle: 'Admin - Product List',
+                path: '/admin/products'
+            })
         })
-    })
+        .catch(err => console.log(err));
+
 }
 
 exports.getAddProduct = (req, res, next) => {
@@ -20,10 +23,10 @@ exports.getAddProduct = (req, res, next) => {
   
 exports.postAddProduct = (req, res, next) => {
     const title = req.body.title;
-    const imageUrl = req.body.imageUrl;
+    const imageUrl = req.body.image_url;
     const description = req.body.description;
     const price = req.body.price;
-    const product = new Product(null, title, imageUrl, description, price);
+    const product = new Product(null ,title, imageUrl, description, price);
     product.save();
     res.redirect('/');
 };
@@ -31,7 +34,7 @@ exports.postAddProduct = (req, res, next) => {
 exports.postEditProduct = (req, res, next) => {
     const id = req.body.productId;
     const title = req.body.title;
-    const imageUrl = req.body.imageUrl;
+    const imageUrl = req.body.image_url;
     const description = req.body.description;
     const price = req.body.price;
     const product = new Product(id, title, imageUrl, description, price);
@@ -41,10 +44,13 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.getEditProduct = (req, res, next) => {
     const prodId = req.params.productId;
-    Product.findById(prodId, (product) => {
+    Product.findById(prodId)
+    .then(([row, _ ]) => {
+        const product = row[0];
         if (!product){
             return res.redirect('/');
         }
+
         res.render('admin/edit-product', {
         pageTitle: `Edit Product - ${product.title}`,
         path: '/admin/edit-product',
@@ -52,6 +58,7 @@ exports.getEditProduct = (req, res, next) => {
         product
         });
     })
+    .catch(err => console.log(err));
 };
 
 exports.deleteProduct = (req, res, next) => {
