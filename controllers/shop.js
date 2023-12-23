@@ -3,7 +3,7 @@ const Cart = require("../models/cart");
 
 exports.getProducts = (req, res, next) => {
   Product.fetchAll()
-    .then(([products, _ ]) => {
+    .then( products => {
       res.render('shop/product-list', {
         prods: products,
         pageTitle: 'Products',
@@ -16,8 +16,7 @@ exports.getProducts = (req, res, next) => {
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   Product.findById(prodId)
-    .then(([row, _ ]) => {
-      const product = row[0];
+    .then((product) => {
       res.render('shop/product-detail', {
         product,
         pageTitle: `Product: ${product.title}`,
@@ -28,53 +27,41 @@ exports.getProduct = (req, res, next) => {
 }
 
 exports.getCart = (req, res, next) => {
-  Cart.getCart(cart => {
-    Product.fetchAll()
-      .then(([products, _ ]) => {
-        const cartProducts = [];
-        for (let product of products) {
-          const cartProductData = cart?.products.find(prod => prod.id === product.id)
-            if (cartProductData) {
-              cartProducts.push({productData: product, qty: cartProductData.qty});
-            }
-        }
+  const user = req.user;
+  Cart.getCart(user.id)
+  .then(cartItems => {
         res.render( 'shop/cart', {
           pageTitle: 'Your Cart',
           path: "/cart",
-          products: cartProducts,
-          totalPrice: cart?.totalPrice ?? 0
+          products: cartItems,
+          totalPrice: 0
         });
       })
-      .catch(err => console.log(err));
-  });
-  
 }
 
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findById(prodId)
-    .then( ([row, _ ]) => {
-      const product = row[0];
-      Cart.addProduct(prodId, product.price);
-    })
-    .catch(err => console.log(err));
-  res.redirect('/cart');
+  const user = req.user;
+    Cart.addToCart(user.id, prodId)
+      .then(() => {
+        res.redirect('/cart');
+      })
+      .catch(err => console.log(err));
 }
 
 exports.deleteCartItem = (req, res, next) => {
-  const prodId = req.body.productId;
-  Product.findById(prodId)
-    .then(([row, _ ]) => {
-      const product = row[0];
-      Cart.deleteProduct(prodId, product.price);
+  const cartItemId = req.body.cartItemId;
+  const user = req.user; 
+  Cart.deleteFromCart(cartItemId, user.id)
+    .then(() => {
+      res.redirect('/cart');
     })
     .catch(err => console.log(err));
-  res.redirect('/cart');
 }
 
 exports.getHomePage = (req, res, next) => {
   Product.fetchAll()
-    .then(([products, _ ]) => {
+    .then(products => {
       res.render('shop/index', {
         prods: products,
         pageTitle: 'Shop',

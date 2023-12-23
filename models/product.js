@@ -3,31 +3,55 @@ const db = require('../util/database');
 
 
 module.exports = class Product {
-  constructor(id, title, image_url, description, price) {
+  constructor(id, title, image_url, description, price, user_id) {
     this.id = id;
     this.title = title;
     this.image_url = image_url;
     this.description = description;
     this.price = price;
+    this.user_id = user_id;
   }
 
   save() {
     if (!this.id){
-      return db.execute(`INSERT INTO products (title, price, description, image_url) VALUES('${this.title}', ${this.price}, '${this.description}', '${this.image_url}')`);
+      return db.execute("INSERT INTO products (title, price, description, image_url, user_id) VALUES(?, ?, ?, ?, ?)", [
+        this.title,
+        this.price,
+        this.description,
+        this.image_url,
+        this.user_id
+      ]);
     }
-    return db.execute(`UPDATE products SET title = '${this.title}', price = ${this.price}, description = '${this.description}', image_url = '${this.image_url}' WHERE id = ${this.id}`);
+    return db.execute("UPDATE products SET title = ?, price = ?, description = ?, image_url = ?, user_id = ? WHERE id = ?", [
+      this.title,
+      this.price,
+      this.description,
+      this.image_url,
+      this.user_id,
+      this.id
+    ]);
 
   }
 
-  static fetchAll() {
-    return db.execute('SELECT * FROM products');
+  static async fetchAll() {
+    const [products, _ ] = await db.execute('SELECT * FROM products');
+    return products;
   }
 
-  static findById(prodId) {
-    return db.execute(`SELECT * FROM products WHERE id = ${prodId} LIMIT 1`);
+  static async findById(prodId) {
+    try{
+      const [row, _ ] = await db.execute("SELECT * FROM products WHERE id = ? LIMIT 1", [prodId])
+      return row[0];
+    } 
+    catch(err){
+      console.log(err)
+    }
+    
   }
 
   static deleteById(prodId) {
-    return db.execute(`DELETE FROM products WHERE id = ${prodId}`);
+    return db.execute("DELETE FROM products WHERE id = ?", [
+      prodId
+    ]);
   }
 };
