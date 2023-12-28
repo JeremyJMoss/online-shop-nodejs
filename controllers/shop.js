@@ -1,5 +1,6 @@
 const Product = require('../models/product');
 const Cart = require("../models/cart");
+const Order = require("../models/order");
 
 exports.getProducts = (req, res, next) => {
   Product.fetchAll()
@@ -71,16 +72,30 @@ exports.getHomePage = (req, res, next) => {
     .catch(err => console.log(err));
 }
 
-exports.getCheckout = (req,res,next) => {
-  res.render( 'shop/checkout', {
-    pageTitle: 'Checkout',
-    path: '/checkout'
+exports.createOrder = (req, res, next) => {
+  const user = req.user;
+  Cart.getCart(user.id)
+  .then(cart => {
+    Order.addOrder(cart, user)
+    .then(() => {
+      Cart.clearCart(user.id)
+      .then(() => {
+        res.redirect('/orders');
+      })
+    })
+    .catch(err => console.log(err));
   })
+  .catch(err => console.log(err));
 }
 
 exports.getOrders = (req,res,next) => {
-  res.render( 'shop/orders', {
-    pageTitle: 'Orders',
-    path: '/orders'
+  const user_id = req.user.id;
+  Order.fetchAll(user_id)
+  .then(orders => {
+    res.render( 'shop/orders', {
+      pageTitle: 'Orders',
+      path: '/orders',
+      orders
+    })
   })
 }
