@@ -3,6 +3,8 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
@@ -34,7 +36,7 @@ app.use(errorController.get404);
 
 mongoose
   .connect(
-    'mongodb+srv://moss:4LDTBdqnOpuMaTM2@cluster0.te1ad97.mongodb.net/shop?retryWrites=true&w=majority'
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.te1ad97.mongodb.net/shop?retryWrites=true&w=majority&tls=true`,
   )
   .then(result => {
     User.findOne().then(user => {
