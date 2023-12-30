@@ -2,10 +2,10 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const errorController = require('./controllers/error');
-
-const User = require("./models/user");
+const User = require('./models/user');
 
 const app = express();
 
@@ -19,33 +19,38 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
-    User.findById(1)
-    .then(([row, _]) => {
-        const user = row[0];
-        if (user){
-            req.user = user;
-        }
-        else{
-            console.log("No Admin User Found");
-        }
-        next();
+  User.findById('658c6fffcba8073bbd7067c0')
+    .then(user => {
+      req.user = user;
+      next();
     })
     .catch(err => console.log(err));
-})
+});
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-User.findById(1)
-.then(([row, _ ]) => {
-    const user = row[0];
-    if (!user){
-        const adminUser = new User(null, "jeremy", 'test@test.com');
-        adminUser.save(); 
-    }
+mongoose
+  .connect(
+    'mongodb+srv://moss:4LDTBdqnOpuMaTM2@cluster0.te1ad97.mongodb.net/shop?retryWrites=true&w=majority'
+  )
+  .then(result => {
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({
+          name: 'Jeremy',
+          email: 'jeremy@test.com',
+          cart: {
+            items: []
+          }
+        });
+        user.save();
+      }
+    });
     app.listen(3000);
-})
-.catch(err => console.log(err));
-
+  })
+  .catch(err => {
+    console.log(err);
+  });
