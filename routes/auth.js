@@ -1,5 +1,5 @@
 const express = require('express');
-const { check } = require('express-validator');
+const { body } = require('express-validator');
 
 const authController = require('../controllers/auth');
 
@@ -14,17 +14,18 @@ router.get('/signup', authController.getSignup);
 router.post(
     '/login',
     [
-        check(
+        body(
             'email',
-            'Please enter a valid email address.'
+            'Please enter a valid email and password'
         )
-        .isEmail(),
-        check(
+        .isEmail()
+        .normalizeEmail(),
+        body(
             'password',
-            'Please enter a valid password'
+            'Please enter a valid email and password'
         )
         .isLength({min: 5})
-        .isAlphanumeric()
+        .trim()
     ],
     authController.postLogin
 );
@@ -32,7 +33,7 @@ router.post(
 router.post(
     '/signup',
     [
-        check(
+        body(
             'email',
             'Please enter a valid email address.'
         )
@@ -44,14 +45,15 @@ router.post(
                         return Promise.reject('Email exists already, please pick a different one.');
                     }
                 })
-        }),
-        check(
+        })
+        .normalizeEmail(),
+        body(
             'password',
             'Please enter a password with only numbers and text and at least 5 characters'
         )
         .isLength({min: 5})
-        .isAlphanumeric(),
-        check(
+        .trim(),
+        body(
             'confirmPassword'
         )
         .custom((val, { req }) => {
@@ -60,7 +62,7 @@ router.post(
             }
             return true;
         })
-
+        .trim()
     ],
     authController.postSignup
 );
