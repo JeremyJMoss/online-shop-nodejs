@@ -21,8 +21,6 @@ router.post(
         .isString()
         .isLength({ min:3 })
         .trim(),
-        body('imageUrl', 'Please enter a valid URL')
-        .isURL(),
         body('price', 'Please enter a valid price')
         .isFloat(),
         body('description', 'Please enter a description greater than 5 characters and less than 400 characters')
@@ -42,8 +40,6 @@ router.post(
         .isString()
         .isLength({ min:3 })
         .trim(),
-        body('imageUrl', 'Please enter a valid URL')
-        .isURL(),
         body('price', 'Please enter a valid price')
         .isFloat(),
         body('description', 'Please enter a description greater than 5 characters and less than 400 characters')
