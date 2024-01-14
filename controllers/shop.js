@@ -1,6 +1,9 @@
+require ('dotenv').config()
+
 const fs = require('fs');
 const PDFDoc = require('pdfkit');
 const path = require('path');
+const stripe = require('stripe')(process.env.STRIPE_API_KEY);
 
 const Product = require('../models/product');
 const Order = require('../models/order');
@@ -137,7 +140,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
     });
 };
 
-exports.postOrder = (req, res, next) => {
+exports.getCheckoutSuccess = (req, res, next) => {
   req.user
     .populate('cart.items.productId')
     .execPopulate()
@@ -219,5 +222,53 @@ exports.getInvoice = (req, res, next) => {
     })
     .catch(err => {
       next(err);
+    })
+}
+
+exports.getCheckout = (req, res, next) => {
+  let products;
+  let totalSum = 0;
+  req.user
+    .populate('cart.items.productId')
+    .execPopulate()
+    .then(user => {
+      products = user.cart.items;
+      totalSum = products.reduce((acc, cur) => {
+        return acc + cur.quantity * cur.productId.price;
+      }, 0)
+      
+      return stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: products.map(product => {
+          return {
+            price_data: {
+              product_data: {
+                name: product.productId.title,
+                description: product.productId.description,
+              },
+              unit_amount: product.productId.price * 100,
+              currency: 'aud',
+            },
+            quantity: product.quantity
+          };
+        }),
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/checkout/success`,
+        cancel_url: `${req.protocol}://${req.get('host')}/checkout/cancel`
+      });
+    })
+    .then(session => {
+      res.render('shop/checkout', {
+        path: '/checkout',
+        pageTitle: 'Checkout',
+        products,
+        totalSum,
+        sessionId: session.id
+      })
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     })
 }
